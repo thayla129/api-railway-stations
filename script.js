@@ -1,67 +1,48 @@
+'user strict'
+
 async function fetchStations() {
-    const url = "https://api.railway-stations.org/photoStationsByCountry/ch";
     const container = document.getElementById("stations");
-    container.innerHTML = "Carregando...";
-
-    try {
-        const response = await fetch(url);
-        const stations = await response.json();
-
-        container.innerHTML = "";
-        stations.forEach(station => {
-            const div = document.createElement("div");
-            div.className = "station";
-            div.innerHTML = `<strong>${station.name}</strong> - ${station.countryCode}`;
-            container.appendChild(div);
-        });
-    } catch (error) {
-        container.innerHTML = "Erro ao carregar as estações.";
-    }
-}
-
-async function fetchPhotos(stationName) {
-    const url = "https://api.railway-stations.org/photoStationsByCountry/ch";
-    const container = document.getElementById("photos");
-    container.innerHTML = "Carregando...";
-
-    try {
-        const response = await fetch(url);
-        const stations = await response.json();
-        const station = stations.find(s => s.name.includes(stationName));
-
-        container.innerHTML = "";
-        if (station && station.photos) {
-            station.photos.forEach(photo => {
-                const div = document.createElement("div");
-                div.className = "photo";
-                div.innerHTML = `<img src="${photo.url}" alt="${stationName}">`;
-                container.appendChild(div);
-            });
-        } else {
-            container.innerHTML = "Nenhuma foto encontrada.";
+    let search = searchValue;
+    
+    if (!search) {
+        container.innerHTML = "Insira a sigla de algum país";
+    } else {
+        const url = `https://api.railway-stations.org/${search}/stations`;
+        container.innerHTML = "Carregando...";
+        
+        try {            
+            const response = await fetch(url);   
+            const dados = await response.json();
+            
+            if (dados.length > 0) {
+                container.innerHTML = "";
+                
+                dados.forEach(station => {
+                    const div = document.createElement("div");
+                    div.className = "station";
+                    div.innerHTML = `<strong>${station.title}</strong> - ${station.country}`;
+                    div.addEventListener("click", () => openStationPage(station));
+                    container.appendChild(div);
+                });
+            } else {
+                container.innerHTML = "Erro ao carregar as estações. Insira uma sigla válida!";
+            }
+        } catch (error) {
+            console.error(error);
+            container.innerHTML = "Ocorreu um erro";
         }
-    } catch (error) {
-        container.innerHTML = "Erro ao carregar as fotos.";
     }
 }
 
-async function fetchStats() {
-    const url = "https://api.railway-stations.org/stats";
-    const container = document.getElementById("stats");
-    container.innerHTML = "Carregando...";
-
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-
-        container.innerHTML = `
-            <div class="stats">
-                <p>Total de estações: ${data.totalStations}</p>
-                <p>Estações com fotos: ${data.totalPhotoStations}</p>
-                <p>Usuários ativos: ${data.totalUsers}</p>
-            </div>
-        `
-    } catch (error) {
-        container.innerHTML = "Erro ao carregar estatísticas.";
-    }
+function openStationPage(station) {
+    const url = `station.html?name=${encodeURIComponent(station.title)}&photo=${encodeURIComponent(station.photoUrl)}`;
+    window.location.href = url;
 }
+
+const searchInput = document.getElementById("searchInput");
+const listStationsButton = document.getElementById("listStationsButton");
+
+searchInput.addEventListener("input", () => {
+    searchValue = searchInput.value;
+    listStationsButton.innerHTML = `Estações ferroviárias ${searchValue ? `de ${searchValue}` : "por país"}`;
+});
